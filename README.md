@@ -16,7 +16,7 @@ The Tea/Horse proving system consists of three major parts:
 
 The name Tea/Horse comes from an ancient confidential transaction style, in which people traded tea for horse or vice versa, (perhaps sometimes) keeping the price/bidding information within sleeves, exchanged during hand-shaking. Below picture was taken in Songpan where the author was there to attend a trail running event early July. He came up with the idea of aggregated proving on his flight going there.
 
-![confidential transaction trading tea vs horse](img/th.jpeg)
+<img src="img/th.jpeg" alt="confidential transaction trading tea vs horse" width="300"/>
 
 ### Technical Requirements and Key Design
 
