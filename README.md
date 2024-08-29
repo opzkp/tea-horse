@@ -14,7 +14,7 @@ The Tea/Horse proving system consists of three major parts:
 - Aggregated Proving to effectively reduce the symptotical Verifier complexity to sub-linear.
 - Single circuit for a recursive verifier, to address the linear verification key issue.
 
-The name Tea/Horse comes from an ancient confidential transaction style, in which people traded tea for horse or vice versa, (perhaps sometimes) keeping the price/bidding information within sleeves, exchanged during hand-shaking. Below picture was taken in Songpan where the author was there to attend a trail running event early July. He came up with the idea of aggregated proving on his flight going there.
+The name Tea/Horse comes from an ancient confidential transaction style, in which people traded tea for horse or vice versa, (perhaps sometimes) keeping the price/bidding information within sleeves, exchanged during hand-shaking. Below picture was taken in Songpan where the author attended a trail running event early July. He came up with the idea of aggregated proving on his flight going there.
 
 <img src="img/th.jpeg" alt="confidential transaction trading tea vs horse" width="300"/>
 
