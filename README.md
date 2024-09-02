@@ -38,7 +38,7 @@ The advantages are two fold:
 
 We use bold lower case letters to denote vectors, for example, $\textbf{v} = (v_0, v_1, v_2, ..., v_{d-1})$, with explicit or implicit length $d$; bold number or its value representation to denote the vector of that number in increasing exponents, for example, $\textbf{2}$ = $(1, 2, 4, 8, ..., 2^{d-1})$ and $\textbf{x}_\textbf{0}$ = $(1, x_0, x_0^2, ..., x_0^{d-1})$; bold upper case letters to denote matrixes, for example, $\textbf{W}$. 
 
-We use $[m]$ to denote close range $[1, m]$. $[\cdot]\cdot$ denotes scalar multiplication for an implicit EC group $\mathbb{G}$ of order $p$. $\langle \cdot, \cdot \rangle$ denotes the inner product operator, regardless of the types of the parameters: they could be either $\mathbb{Z}_p \times \mathbb{Z}_p \rarr \mathbb{Z}_p$, or $\mathbb{Z}_p \times \mathbb{G} \rarr \mathbb{G}$.
+We use $[m]$ to denote close range $[1, m]$. $[\cdot]\cdot$ denotes scalar multiplication for an implicit EC group $\mathbb{G}$ of order $p$. $\langle \cdot, \cdot \rangle$ denotes the inner product operator, regardless of the types of the parameters: they could be either $\mathbb{Z}_p \times \mathbb{Z}_p \rightarrow \mathbb{Z}_p$, or $\mathbb{Z}_p \times \mathbb{G} \rightarrow \mathbb{G}$.
 
 Throughout this document, the commitment scheme is Pedersen vector commitment. We also modify the Inner-Product Argument from [Bulletproofs](https://eprint.iacr.org/2017/1066.pdf) a bit following the [Halo paper](https://eprint.iacr.org/2019/1021.pdf), as one of the two vectors are usually known.
 
