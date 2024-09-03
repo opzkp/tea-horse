@@ -108,3 +108,30 @@ $$L = \langle \textbf{v}_{even}, \textbf{G}_{odd} \rangle + \sum_{i=1}^m[\langle
 $$R = \langle \textbf{v}_{odd}, \textbf{G}_{even} \rangle + \sum_{i=1}^m[\langle \textbf{v}_{odd}, \textbf{x}_{i_{even}} \rangle]U_i$$
 
 Besides necessary values of $a_i$, there are no extra communication costs.
+
+##### Different Polynomial, Same Point
+
+Next we describe how to open multiple polynomials at the same point. Suppose we have $m$ polynomials $p_i(X)$ for $i \in [m]$, each is evaluated to $a_i$ at the same point $x_0$:
+$$a_i = p_i(x_0), i \in [m]$$
+
+Prover first need to commit to each of the polynomials. Let the commitments be $C_i, i \in [m]$. For simplicity, let's use $\textbf{p}_i$ instead of $\textbf{v}$ to represent the the vector of coefficiencies of polynomial $p_i(X)$. We have:
+$$C_i = \text{Commit}(\textbf{p}_i, r_i) = \langle \textbf{p}_i, \textbf{G} \rangle + [r_i]H$$
+
+Verifier generates a random value as challenge: $\beta \in \mathbb{Z}_p$. Prover computes:
+$$C = \sum_{i=1}^m \beta^i \cdot C_i = \sum_{i=1}^m \langle \beta^i \cdot \textbf{p}_i, \textbf{G} \rangle + [\beta^i \cdot r_i]H$$
+Equivalently there exists a batched polynomial
+$$p(X) = \sum_{i=1}^m \beta^i \cdot p_i(X)$$
+which is commited to $C$, with $r = \sum_{i=1}^m \beta^i \cdot r_i$ as blinder:
+$$C = \text{Commit}(\textbf{p}, r)$$
+
+And this commitment value $C$ shall be open to $a = \sum_{i=1}^m \beta^i \cdot a_i$ at $x_0$. For that we already have a protocol.
+
+##### Hybrid Case
+
+We might have hybrid case for the Tea/Horse proving system: opening $R$ for $r(X, 1)$ at two different points $z$ and $yz$, and opening $T_{lo}$ for $t_{lo}(X, y)$ and $T_{hi}$ for $t_{hi}(X, y)$ at $z$. A combination of the previous two cases suffices here. We leave the details to later sections.
+
+Note that the communication costs here are three $\mathbb{G}$ elements for commitments and four $\mathbb{Z}_p$ elements for open-to values, in addition to what is required by IPA. The verifier complexity is still linear to the polynomial size.
+
+### The Proving System
+
+In the Tea/Horse proving system, a typical R1CS circuit is organized as many (m) sub-circuits, each having a size of fixed upbound set to $2^{16}$. In this section, we describe how the system works.
