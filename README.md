@@ -34,6 +34,8 @@ The advantages are two fold:
 
 (2) It is possible to upgrade the recursive prover, the recursive verifier or the circuit without interrupting the applications based on OP_ZKP, in case of critical security patches. Still, it is each application circuit's responsibility to take care of their own security and efficiency.
 
+Note that application circuits need not adopt the aggregated proving technique. As the verification is rather different with that of _normal_ circuits, it is unlikely to have the recursive verifier support both ways.
+
 ### Preliminary
 
 We use bold lower case letters to denote vectors, for example, $\textbf{v} = (v_0, v_1, v_2, ..., v_{d-1})$, with explicit or implicit length $d$; bold number or its value representation to denote the vector of that number in increasing exponents, for example, $\textbf{2}$ = $(1, 2, 4, 8, ..., 2^{d-1})$ and $\textbf{x}_\textbf{0}$ = $(1, x_0, x_0^2, ..., x_0^{d-1})$; bold upper case letters to denote matrixes, for example, $\textbf{W}$. 
@@ -98,7 +100,7 @@ Rename $(P', \textbf{G}', \textbf{v}', \textbf{x}'_\textbf{0})$ to $(P, \textbf{
 First we describe how to open a commitment value $C$ to a polynomial $p(X)$ at multiple points $(x_1, x_2, ..., x_m)$ with IPA. Suppose we have $a_i = p(x_i), i \in [m]$, we need to open $C$ at each $x_i$ to $a_i$. 
 
 Let $U_i, i \in [m]$ be $m$ random generators. At the begining we shall have 
-$$P = C + \sum_{i=1}^m[{a_i}]U_i = \langle\textbf{v}, \textbf{G} \rangle + [r]H + \sum_{i=1}^m[\langle \textbf{v}, \textbf{x}_\textbf{i} \rangle]U_i$$
+$$P = C + \sum_{i=1}^m[{a_i}]U_i = \langle\textbf{v}, \textbf{G} \rangle + [r]H + \sum_{i=1}^m[\langle \textbf{v}, \textbf{x}_\textbf{i} \rangle]U_i \tag{3}$$
 
 For each round, in a similar way we may have:
 $$\textbf{x}_\textbf{i}' = \textbf{x}_{i_{odd}} + \gamma^{-1} \cdot \textbf{x}_{i_{even}}$$
@@ -118,7 +120,7 @@ Prover first need to commit to each of the polynomials. Let the commitments be $
 $$C_i = \text{Commit}(\textbf{p}_i, r_i) = \langle \textbf{p}_i, \textbf{G} \rangle + [r_i]H$$
 
 Verifier generates a random value as challenge: $\beta \in \mathbb{Z}_p$. Prover computes:
-$$C = \sum_{i=1}^m \beta^i \cdot C_i = \sum_{i=1}^m \langle \beta^i \cdot \textbf{p}_i, \textbf{G} \rangle + [\beta^i \cdot r_i]H$$
+$$C = \sum_{i=1}^m \beta^i \cdot C_i = \sum_{i=1}^m \langle \beta^i \cdot \textbf{p}_i, \textbf{G} \rangle + [\beta^i \cdot r_i]H \tag{4}$$
 Equivalently there exists a batched polynomial
 $$p(X) = \sum_{i=1}^m \beta^i \cdot p_i(X)$$
 which is commited to $C$, with $r = \sum_{i=1}^m \beta^i \cdot r_i$ as blinder:
@@ -135,3 +137,84 @@ Note that the communication costs here are three $\mathbb{G}$ elements for commi
 ### The Proving System
 
 In the Tea/Horse proving system, a typical R1CS circuit is organized as many (m) sub-circuits, each having a size of fixed upbound set to $2^{16}$. In this section, we describe how the system works.
+
+The basic idea is to aggregatedly prove all the sub-circuits. For each sub-circuit, we follow a protocol which is a mixture of Sonic and Halo. Then we have an argument to aggregate them together.
+
+#### Sonic Arithemtic
+
+In this section we reiterate the Sonic Arithmetic following notations from [Sonic Paper](https://eprint.iacr.org/2019/099.pdf) and [Halo paper](https://eprint.iacr.org/2019/1021.pdf) with slight modifications introducing matrix notations. We assume that the circuit has been preprocessed (see Appendix A of [Bootleproofs](https://eprint.iacr.org/2016/263.pdf)).
+
+Suppose we have an arithmetic circuit $C$ and let $N$, $Q$, $d$, $k$ be integers such that $d = 4N = 2^k$ and $3Q \lt d$. There are $N$ multiplication gates such that the $\textit{i}$-th constaint is:
+
+$$ a_i \cdot b_i = c_i \tag{5}$$
+
+where $a_i, b_i, c_i$ are the $i$-th element of the witnesses vectors $\textbf{a}, \textbf{b}, \textbf{c} \in \mathbb{Z}_p^{N}$.
+
+For the $Q$ linear constraints capturing the copy wires, multiplied-by-constant gates and addition gates, we denote $\textbf{U}, \textbf{V}, \textbf{W} \in \mathbb{Z}_p^{Q \times N}$ and $\textbf{k} \in \mathbb{Z}_p^Q$ such that:
+
+$$\textbf{U}\cdot\textbf{a} + \textbf{V}\cdot\textbf{b} + \textbf{W}\cdot\textbf{c} = \textbf{k} \tag{6}$$
+
+Here, $\textbf{U}, \textbf{V}, \textbf{W}, \textbf{k}$ are the circuit constants (where there is no confusion, we use row vector and column vector interchangedly).
+
+For $\textbf{M} \in \{\textbf{U}, \textbf{V}, \textbf{W}\}$, we denote 
+$$m_i(Y) = \sum_{q=1}^Q Y^q\cdot M_{q,i} $$
+where $M_{q,i}$ denotes the element at the position of $(q, i)$ of matrix $\textbf{M}$. And let $$ k(Y) = \sum_{q=1}^Q Y^q \cdot k_q$$
+Embedding all the constraints into a single equation of $Y$, we have
+
+$$ Y^N (\sum_{i=1}^N(a_iu_i(Y) + b_iv_i(Y) + c_iw_i(Y)) - k(Y)) + \sum_{i=1}^N(a_i b_i - c_i)\cdot(Y^i + Y^{-i}) = 0 \tag{7}$$
+
+which should hold at all points if all the constraint system is satisfied for some witness $\textbf{a, b, c} \in \mathbb{Z}_p^N$. Given a large enough field, this means the constraint system is satisfied with high probability if Equation 7 holds for a random challenge value $y \in \mathbb{Z}_p$ and some witness values.
+
+Going on with Sonic Arithmetic, let's define some more polynomials:
+
+$$r(X, Y) = \sum_{i=1}^N(a_iX^iY^i + b_iX^{-i}Y^{-i} + c_iX^{-i-N}Y^{-i-N})$$
+$$s(X, Y) = \sum_{i=1}^N(u_i(Y)X^{-i} + v_i(Y)X^i + w_i(Y)X^{i+N})$$
+$$s'(X, Y) = Y^Ns(X, Y) - \sum_{i=1}^N(Y^i + Y^{-i})X^{i+N}$$
+$$t(X, Y) = r(X, 1)(r(X, Y) + s'(X, Y)) - Y^Nk(Y) \tag{8}$$
+
+Note that the constant term of $t(X, Y)$ in terms of $X$, that is, the coefficient of $X^0$, is exactly the left-hand side of Equation 7. So the protocol design is to show that, Equation 8 still holds after removing the constant term from the left-hand side.
+
+#### Single Sub-Circuit Proving
+
+This part is still mostly Sonic Arithmetization with (modified) IPA. Some ideas come from [Halo](https://eprint.iacr.org/2019/1021.pdf) but we do not use the amortizing part or cycles of curves part. We stick to the `secp256k1` curve. Also as we hard-coded some circuit constants in the verifier side, verifier could compute these values on its own. 
+
+Prover commits to $r(X, 1)$ with blinder $\delta_R$ for circuit $C$. We follow [Halo paper](https://eprint.iacr.org/2019/1021.pdf) to scale it with $X^{3N-1}$ to ensure $r(X, 1)$ is at most degreen $N$.
+$$\delta_R \overset{\$}{\larr} \mathbb{Z}_p,\quad R \larr \text{Commit}(r(X, 1)X^{3N-1}; \delta_R) $$
+
+Verifier responds with a challenge value $y \in \mathbb{Z}_p$. In a non-interactive setting, $y$ should be generated by hashing the past transcriptions up to and including the commitment value $R$. We ignore this notion in later sections.
+
+Now let $t_{lo}(X, y), t_0(y), t_{hi}(X, y)$ be the part of $t(X, y)$ with negative exponent, constant term, and with positive exponent, for X, that is,
+$$t(X, y) = t_{lo}(X, y)X^{-d} + t_0(y) + t_{hi}(X, y)X$$
+
+Prover commits to $t_{lo}$ and $t_{hi}$.
+$$\delta_{T_{lo}} \overset{\$}{\larr} \mathbb{Z}_p,\quad T_{lo} \larr \text{Commit}(t_{lo}(X, y); \delta_{T_{lo}}) $$
+$$\delta_{T_{hi}} \overset{\$}{\larr} \mathbb{Z}_p,\quad T_{hi} \larr \text{Commit}(t_{hi}(X, y); \delta_{T_{hi}}) $$
+
+Verifier responds with a challenge value $z \in \mathbb{Z}_p$.
+
+Prover now needs to open a few commitments, and provides open to values and proofs.
+$$(e = r(z, 1), proof_a) \larr \text{Open}_\text{IPA}(R, z, r(X, 1), \delta_R)$$
+$$(f = r(z, y), proof_b) \larr \text{Open}_\text{IPA}(R, yz, r(X, 1), \delta_R)$$
+$$(t_1 = t_{lo}(z, y), proof_{t_{lo}}) \larr \text{Open}_\text{IPA}(T_{lo}, z, t_{lo}(X, y), \delta_{T_{lo}})$$
+$$(t_2 = t_{hi}(z, y), proof_{t_{hi}}) \larr \text{Open}_\text{IPA}(T_{hi}, z, t_{hi}(X, y), \delta_{T_{hi}})$$
+
+Verifier need to verify all the above openings, compute $s = s(z, y)$, $s'$ from $s$, $k = k(y)$, then check if
+$$t_1 + t_2 \overset{?}{=} e(f + s') - k \tag{8}$$
+
+Passing Identity Test 8 means that $t_0(y) = 0$ with overwhelming probability. If all checks pass, Verifier returns 1, otherwise 0.
+
+*Remark* The computation of $s$ does not involve confidential witness data $\textbf{a}, \textbf{b}$ or $\textbf{c}$, so Verifier could compute on its own. Note that although $\textbf{U}, \textbf{V}, \textbf{W}$ are sparse for each sub-circuit, sparseness no longer holds after aggregating many sub-circuits. The size would exdeed the bound for opening $R$, $T_{lo}$ or $T_{hi}$. Opening a commitment to $s(X, y)$ is therefore not viable for aggregated proving. Direct computation in $\mathbb{Z}_p$ should be much faster than verifying opening with IPA, which features multi-scalar multiplication of linear size in $\mathbb{G}$. That's the reason we don't bother committing to it even for single sub-circuit. We will discuss the optimization for computing $s$ in later sections.
+
+##### Batched Opening for Sub-Circuit
+
+The opening of $R$ at $z$, $yz$, of $T_{lo}$ and $T_{hi}$ at $z$, could be batched together with the batching techniques we have described in the last section.
+
+Specfically, $R$ could be opened to $e \in \mathbb{Z}_p$ and $f \in \mathbb{Z}_p$ at $z$ and $yz$ given random generator $U_1$ and $U_2$. We have
+$$P_R = R + [e]U_1 + [f]U_2 = \langle\textbf{r}, \textbf{G} \rangle + [\delta_R]H + [\langle \textbf{r}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2$$
+where $\textbf{r}$ denotes the coefficiencies for $r(X, 1)$.
+
+To open $T_{lo}$ and $T_{hi}$ at $z$ in a batch along with $R$, suppose $\beta$ is the challenge value, we should have
+$$P = R + [\beta]T_{lo} + [\beta^2]T_{hi} + [e + \beta \cdot t_{lo} + \beta^2 \cdot t_{hi}]U_1 + [f]U_2$$
+$$\quad = \langle\textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{G} \rangle + [\delta_R + \beta \cdot \delta_{lo} + \beta^2 \cdot \delta_{hi}]H $$
+$$\quad \quad + [\langle \textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2 \tag{9}$$
+
