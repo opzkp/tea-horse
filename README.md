@@ -159,8 +159,13 @@ For $\textbf{M} \in \{\textbf{U}, \textbf{V}, \textbf{W}\}$, we denote
 $$m\_i(Y) = \sum\_{q=1}^Q Y^q\cdot M\_{q,i} $$
 
 where $M\_{q,i}$ denotes the element at the position of $(q, i)$ of matrix $\textbf{M}$. 
-And let $k(Y) = \sum_{q=1}^Q Y^q \cdot k_q$. Embedding all the constraints into a single equation of $Y$, we have
-$$ Y^N (\sum\_{i=1}^N(a\_iu\_i(Y) + b\_iv\_i(Y) + c\_iw\_i(Y)) - k(Y)) + \sum\_{i=1}^N(a\_i b\_i - c\_i)\cdot(Y^i + Y^{-i}) = 0 \tag{7}$$
+And let 
+
+$$k(Y) = \sum_{q=1}^Q Y^q \cdot k_q$$
+
+Embedding all the constraints into a single equation of $Y$, we have
+
+$$ Y^N (\sum_{i=1}^N (a_i u_i(Y) + b_i v_i(Y) + c_i w_i(Y)) - k(Y)) + \sum_{i=1}^N (a_i b_i - c_i)\cdot (Y^i + Y^{-i}) = 0 \quad \quad \quad(7)$$
 
 which should hold at all points if all the constraint system is satisfied for some witness $\textbf{a, b, c} \in \mathbb{Z}\_p^N$. Given a large enough field, this means the constraint system is satisfied with high probability if Equation 7 holds for a random challenge value $y \in \mathbb{Z}\_p$ and some witness values.
 
