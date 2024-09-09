@@ -203,18 +203,47 @@ $$t_1 + t_2 \overset{?}{=} e(f + s') - k \tag{8}$$
 
 Passing Identity Test 8 means that $t_0(y) = 0$ with overwhelming probability. If all checks pass, Verifier returns 1, otherwise 0.
 
-*Remark* The computation of $s$ does not involve confidential witness data $\textbf{a}, \textbf{b}$ or $\textbf{c}$, so Verifier could compute on its own. Note that although $\textbf{U}, \textbf{V}, \textbf{W}$ are sparse for each sub-circuit, sparseness no longer holds after aggregating many sub-circuits. The size would exdeed the bound for opening $R$, $T_{lo}$ or $T_{hi}$. Opening a commitment to $s(X, y)$ is therefore not viable for aggregated proving. Direct computation in $\mathbb{Z}_p$ should be much faster than verifying opening with IPA, which features multi-scalar multiplication of linear size in $\mathbb{G}$. That's the reason we don't bother committing to it even for single sub-circuit. We will discuss the optimization for computing $s$ in later sections.
+*Remark* The computation of $s$ does not involve confidential witness data $\textbf{a}, \textbf{b}$ or $\textbf{c}$, so Verifier could compute on its own. Opening a commitment to $s(X, y)$ is not viable for aggregated proving, as direct computation in $\mathbb{Z}_p$ should be much faster than verifying opening with IPA. Also the size of none-zero entries in the aggregated $\textbf{U}, \textbf{V}$ or $\textbf{W}$ might exceed $d$. That's the reason we don't bother committing to it even for single sub-circuit. We will discuss the optimization for computing $s$ in later sections.
 
 ##### Batched Opening for Sub-Circuit
 
 The opening of $R$ at $z$, $yz$, of $T_{lo}$ and $T_{hi}$ at $z$, could be batched together with the batching techniques we have described in the last section.
 
-Specfically, $R$ could be opened to $e \in \mathbb{Z}_p$ and $f \in \mathbb{Z}_p$ at $z$ and $yz$ given random generator $U_1$ and $U_2$. We have
+Specfically, $R$ could be opened to $e \in \mathbb{Z}_p$ and $f \in \mathbb{Z}_p$ at $z$ and $yz$ given random generators $U_1$ and $U_2$. We have
 $$P_R = R + [e]U_1 + [f]U_2 = \langle\textbf{r}, \textbf{G} \rangle + [\delta_R]H + [\langle \textbf{r}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2$$
 where $\textbf{r}$ denotes the coefficiencies for $r(X, 1)$.
 
-To open $T_{lo}$ and $T_{hi}$ at $z$ in a batch along with $R$, suppose $\beta$ is the challenge value, we should have
-$$P = R + [\beta]T_{lo} + [\beta^2]T_{hi} + [e + \beta \cdot t_{lo} + \beta^2 \cdot t_{hi}]U_1 + [f]U_2$$
+To open $T_{lo}$ and $T_{hi}$ at $z$ in a batch along with $R$, given $\beta$ as the challenge value, we should have
+$$R + [\beta]T_{lo} + [\beta^2]T_{hi} + [e + \beta \cdot t_1 + \beta^2 \cdot t_2]U_1 + [f]U_2$$
 $$\quad = \langle\textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{G} \rangle + [\delta_R + \beta \cdot \delta_{lo} + \beta^2 \cdot \delta_{hi}]H $$
 $$\quad \quad + [\langle \textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2 \tag{9}$$
+
+#### Aggregated Proving
+
+We now consider how we could aggregate the proving of $m$ circuits together, denoted $C^{(i)}$ for $i \in [m]$. We use superscript $(i)$ to indicate the $i$-th circuit. We have $N$ multiplication constraints for sub-circuit $C^{(i)}$
+$$\textbf{a}^{(i)} \circ \textbf{b}^{(i)} = \textbf{c}^{(i)}$$
+where $\circ$ denotes the element-wise multiplication, or Hadamard product, for witnesses $\textbf{a}^{(i)}, \textbf{b}^{(i)}, \textbf{c}^{(i)} \in \mathbb{Z}_p^N$.
+
+And $Q$ linear constraints:
+$$\textbf{U}^{(i)} \cdot \textbf{a}^{(i)} + \textbf{V}^{(i)} \cdot \textbf{b}^{(i)} + \textbf{W}^{(i)} \cdot \textbf{c}^{(i)} = \textbf{k}^{(i)}$$
+where $\textbf{U}^{(i)}, \textbf{V}^{(i)}, \textbf{W}^{(i)} \in \mathbb{Z}_p^{Q \times N}, \textbf{k}^{(i)} \in \mathbb{Z}_p^Q$ are constants for $C^{(i)}$.
+
+Finally we can define polynomials $r^{(i)}(X, Y)$, $s^{(i)}(X, Y)$ and $t^{(i)}(X, Y)$ for circuit $C^{(i)}$. Before aggregation could happen, Prover needs to commit to each $r^{(i)}(X, 1)$: 
+$$\delta_R^{(i)} \overset{\$}{\larr} \mathbb{Z}_p,\quad R^{(i)} \larr \text{Commit}(r^{(i)}(X, 1)X^{3N-1}; \delta_R^{(i)}) $$
+and Verifier responds with a challenge value $y \in \mathbb{Z}_p$. Note that all sub-circuit shares the same $y$ value.
+
+Next, Prover may commit to each of $t_{lo}^{(i)}(X, y)$ and $t_{hi}^{(i)}(X, y)$:
+$$\delta_{T_{lo}^{(i)}} \overset{\$}{\larr} \mathbb{Z}_p,\quad T_{lo}^{(i)} \larr \text{Commit}(t_{lo}^{(i)}(X, y); \delta_{T_{lo}^{(i)}}) $$
+$$\delta_{T_{hi}^{(i)}} \overset{\$}{\larr} \mathbb{Z}_p,\quad T_{hi}^{(i)} \larr \text{Commit}(t_{hi}^{(i)}(X, y); \delta_{T_{hi}^{(i)}}) $$
+
+Verifier responds with a challenge value $z \in \mathbb{Z}_p$, which holds the same for all sub-circuits. And further two more challenge value $\alpha, \beta \in \mathbb{Z}_p$. We use $\alpha$ to combine polynomials, commitment values, blinders and open-to values together:
+$$r(X, 1) = \sum_{i=1}^m \alpha^i \cdot r^{(i)}(X, 1) \quad \quad s(X, y)= \sum_{i=1}^m \alpha^i \cdot s^{(i)}(X, y) $$
+$$t_{lo}(X, y)= \sum_{i=1}^m \alpha^i \cdot t_{lo}^{(i)}(X, y) \quad \quad t_{hi}(X, y)= \sum_{i=1}^m \alpha^i \cdot t_{hi}^{(i)}(X, y) $$
+$$R = \sum_{i=1}^m \alpha^i \cdot R^{(i)} \quad \quad T_{lo} = \sum_{i=1}^m \alpha^i \cdot T_{lo}^{(i)} \quad \quad T_{hi} = \sum_{i=1}^m \alpha^i \cdot T_{hi}^{(i)}$$
+$$\delta_R = \sum_{i=1}^m \alpha^i \cdot \delta_{R^{(i)}} \quad \quad \delta_{T_{lo}} = \sum_{i=1}^m \alpha^i \cdot \delta_{T_{lo}^{(i)}} \quad \quad \delta_{T_{hi}} = \sum_{i=1}^m \alpha^i \cdot \delta_{T_{hi}^{(i)}}$$
+$$e = \sum_{i=1}^m\alpha^i\cdot e^{(i)}\quad f = \sum_{i=1}^m\alpha^i\cdot f^{(i)}\quad t_1 = \sum_{i=1}^m\alpha^i\cdot t_1^{(i)}\quad t_2 = \sum_{i=1}^m\alpha^i\cdot t_2^{(i)}$$
+
+Then we use $\beta$ to batch open the combined polynomials, applying the Equation 9 with the definitions given above.
+
+After checking that Equation 9 holds, Verifier compute $s'$ and $k$, and check if the Identity Test 8 passes.
 
