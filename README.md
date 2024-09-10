@@ -199,9 +199,9 @@ $$(t_1 = t_{lo}(z, y), proof_{t_{lo}}) \larr \text{Open}_\text{IPA}(T_{lo}, z, t
 $$(t_2 = t_{hi}(z, y), proof_{t_{hi}}) \larr \text{Open}_\text{IPA}(T_{hi}, z, t_{hi}(X, y), \delta_{T_{hi}})$$
 
 Verifier need to verify all the above openings, compute $s = s(z, y)$, $s'$ from $s$, $k = k(y)$, then check if
-$$t_1 + t_2 \overset{?}{=} e(f + s') - k \tag{8}$$
+$$t_1 + t_2 \overset{?}{=} e(f + s') - k \tag{9}$$
 
-Passing Identity Test 8 means that $t_0(y) = 0$ with overwhelming probability. If all checks pass, Verifier returns 1, otherwise 0.
+Passing Identity Test 9 means that $t_0(y) = 0$ with overwhelming probability. If all checks pass, Verifier returns 1, otherwise 0.
 
 *Remark* The computation of $s$ does not involve confidential witness data $\textbf{a}, \textbf{b}$ or $\textbf{c}$, so Verifier could compute on its own. Opening a commitment to $s(X, y)$ is not viable for aggregated proving, as direct computation in $\mathbb{Z}_p$ should be much faster than verifying opening with IPA. Also the size of none-zero entries in the aggregated $\textbf{U}, \textbf{V}$ or $\textbf{W}$ might exceed $d$. That's the reason we don't bother committing to it even for single sub-circuit. We will discuss the optimization for computing $s$ in later sections.
 
@@ -216,7 +216,7 @@ where $\textbf{r}$ denotes the coefficiencies for $r(X, 1)$.
 To open $T_{lo}$ and $T_{hi}$ at $z$ in a batch along with $R$, given $\beta$ as the challenge value, we should have
 $$R + [\beta]T_{lo} + [\beta^2]T_{hi} + [e + \beta \cdot t_1 + \beta^2 \cdot t_2]U_1 + [f]U_2$$
 $$\quad = \langle\textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{G} \rangle + [\delta_R + \beta \cdot \delta_{lo} + \beta^2 \cdot \delta_{hi}]H $$
-$$\quad \quad + [\langle \textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2 \tag{9}$$
+$$\quad \quad + [\langle \textbf{r} + \beta \cdot \textbf{t}_\textbf{lo} + \beta^2 \cdot \textbf{t}_\textbf{hi}, \textbf{z} \rangle]U_1 + [\langle \textbf{r}, \textbf{zy} \rangle]U_2 \tag{10}$$
 
 #### Aggregated Proving
 
@@ -243,7 +243,7 @@ $$R = \sum_{i=1}^m \alpha^i \cdot R^{(i)} \quad \quad T_{lo} = \sum_{i=1}^m \alp
 $$\delta_R = \sum_{i=1}^m \alpha^i \cdot \delta_{R^{(i)}} \quad \quad \delta_{T_{lo}} = \sum_{i=1}^m \alpha^i \cdot \delta_{T_{lo}^{(i)}} \quad \quad \delta_{T_{hi}} = \sum_{i=1}^m \alpha^i \cdot \delta_{T_{hi}^{(i)}}$$
 $$e = \sum_{i=1}^m\alpha^i\cdot e^{(i)}\quad f = \sum_{i=1}^m\alpha^i\cdot f^{(i)}\quad t_1 = \sum_{i=1}^m\alpha^i\cdot t_1^{(i)}\quad t_2 = \sum_{i=1}^m\alpha^i\cdot t_2^{(i)}$$
 
-Then we use $\beta$ to batch open the combined polynomials, applying the Equation 9 with the definitions given above.
+Then we use $\beta$ to batch open the combined polynomials, applying the Equation 10 with the definitions given above.
 
-After checking that Equation 9 holds, Verifier compute $s'$ and $k$, and check if the Identity Test 8 passes.
+After checking that Equation 10 holds, Verifier compute $s'$ and $k$, and check if the Identity Test 9 passes.
 
