@@ -336,7 +336,7 @@ Verifier complexity is:
 
 #### Optimization
 
-#### Data Saving
+##### Data Saving
 
 First observe that combined $\textbf{U}, \textbf{V}, \textbf{W}$ are roughly triangle matrixes, with the upper right half mostly zero. This is due to the fact that linear constraints can only reference existing wires. This cuts half the storage cost and runtime for the verifier.
 
@@ -350,7 +350,7 @@ _Remark_ Note that Nova in itself cannot be applied here as it requires cycles o
 
 For commitment values $R^{(i)}, T_{lo}^{(i)}, T_{hi}^{(i)}, i \in [m]$, we need a circuit to prove the following computation:
 
-- derive a value $\alpha_C \in \mathbb{Z}_p^*$ by hashing $C^{(i)}$ together for $C \in \{R, T_{lo}, T_{hi}\}$. A field friendly hash would be helpful. However we might need just `Sha256` for Bitcoin.
+- derive a value $\alpha_C \in \mathbb{Z}\_p^*$ by hashing $C^{(i)}$ together for $C \in \{R, T_{lo}, T_{hi}\}$. A field friendly hash would be helpful. However we might need just `Sha256` for Bitcoin.
 - compute $\alpha = \alpha_R \cdot \alpha_{T_{lo}} \cdot \alpha_{T_{hi}}$
 - use the derived $\alpha$ to combined the commitment values $C = \sum_{i=1}^m\alpha^iC^{(i)}$ for $C \in \{R, T_{lo}, T_{hi}\}$
 
