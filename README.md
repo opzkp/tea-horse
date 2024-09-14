@@ -336,7 +336,7 @@ Verifier complexity is:
 
 #### Optimization
 
-#### Data Saving
+##### Data Saving
 
 First observe that combined $\textbf{U}, \textbf{V}, \textbf{W}$ are roughly triangle matrixes, with the upper right half mostly zero. This is due to the fact that linear constraints can only reference existing wires. This cuts half the storage cost and runtime for the verifier.
 
