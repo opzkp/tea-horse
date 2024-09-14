@@ -247,3 +247,71 @@ Then we use $\beta$ to batch open the combined polynomials, applying the Equatio
 
 After checking that Equation 10 holds, Verifier compute $s'$ and $k$, and check if the Identity Test 9 passes.
 
+#### Costs Analysis
+
+For $m$ sub-ircuits each with $N$ multiplication constraints, the proof data include:
+
+- commitments to $r^{(i)}(X, 1), t_{lo}^{(i)}(X, y), t_{hi}^{(i)}(X, y)$, totally $3m$ elements of $\mathbb{G}$, denoted $3m[G]$;
+- aggregated opening hints $\delta_R, \delta_{T_{lo}}, \delta_{T_{hi}}$, totally 3 elements of $\mathbb{Z}_p$, denoted $3[F]$;
+- aggregated open-to values $e, f, t_1, t_2$, totally 4 elements of $\mathbb{Z}_p$, denoted $4[F]$;
+- proof data for opening the aggregated commitment, which is $2log_2(d)[G] + 1[F] = (2log_2(N) + 4)[G] + 1[F] $ (remember $d = 4N$). 
+
+And the verification key include:
+
+- elements of combined $\textbf{U}, \textbf{V}, \textbf{W}$, of apparent size $3QN$, which could be further optimized;
+- elements of combined $\textbf{k}$, of size $Q$.
+
+Verifier complexity is:
+
+- combining $3m$ commitments to 3 commitments, that is $3$ multi-scalar multiplications, echo of size $m$;
+- batch opening the combined commitment, dominated by $d = 4N$ sized multi-scalar multiplication;
+- computing the aggregated $s(X, Y)$ and $k(Y)$, of apparent $O(N^2)$ field operations in $\mathbb{Z}_p$, which could be further optimized.
+
+#### Optimization
+
+#### Data Saving
+
+First observe that combined $\textbf{U}, \textbf{V}, \textbf{W}$ are roughly triangle matrixes, with the upper right half mostly zero. This is due to the fact that linear constraints can only reference existing wires. This cuts half the storage cost and runtime for the verifier.
+
+Next observation is that some circuits are dominated by a few sub-circuits repeated many times. For example, based on the cost analysis above, the recursive verifier for a Tea/Horse proof is dominated by multi-scalar multiplicatioins and some field operations. In that case, the same set of $\{\textbf{U}_0, \textbf{V}_0, \textbf{W}_0\}$ could be used for many sets of data of the same sub-circuit. So the aggregated $\textbf{U}, \textbf{V}, \textbf{W}$ could still be sparse. We conjecture that the actual cost could be more likely $O(N)$ rather than $O(N^2)$, although the constant factor might be concretely large, say, a few tens or hundred.
+
+##### Further Optimizaiton - First Attempt
+
+Last we dicsuss the feasibility of proving the existence of the $3m$ commitments for $r^{(i)}(X, 1), t_{lo}^{(i)}(X, y), t_{hi}^{(i)}(X, y)$, with a dedicated circuit. This is the idea borrowed from [Nova](https://eprint.iacr.org/2021/370.pdf), which employs zkSnark to prove the folding process.
+
+_Remark_ Note that Nova in itself cannot be applied here as it requires cycles of elliptic curves. Also Nova requires auxillary zkSnark circuits, which has similar performance characteristics as analyzed below.
+
+For commitment values $R^{(i)}, T_{lo}^{(i)}, T_{hi}^{(i)}, i \in [m]$, we need a circuit to prove the following computation:
+
+- derive a value $\alpha_C \in \mathbb{Z}_p^*$ by hashing $C^{(i)}$ together for $C \in \{R, T_{lo}, T_{hi}\}$. A field friendly hash would be helpful. However we might need just `Sha256` for Bitcoin.
+- compute $\alpha = \alpha_R \cdot \alpha_{T_{lo}} \cdot \alpha_{T_{hi}}$
+- use the derived $\alpha$ to combined the commitment values $C = \sum_{i=1}^m\alpha^iC^{(i)}$ for $C \in \{R, T_{lo}, T_{hi}\}$
+
+Verifier verifies the proof of the above computation, instead of computing $R, T_{lo}, T_{hi}$ on his own. The $3m$ commitment values $R^{(i)}, T_{lo}^{(i)}, T_{hi}^{(i)}$ are replaced with the proof data of the above circuit. So wow large would this circuit be, and the proof data?
+
+The circuit needs to 
+
+- hash $3m$ elements of $\mathbb{G}$
+- run $3$ multi-scalar multiplication, each of size $m$
+
+Unfortunately, it costs much more to run MSM in-circiut than directly, both proving and verification with IPA.
+
+##### Second Attempt
+
+Take a step back. We could start from $r^{(i)}(X, 1), t_{lo}^{(i)}(X, y), t_{hi}^{(i)}(X, y)$ directly and prove correct derivation of $\alpha$ and aggregation of $r(X, 1), t_{lo}(X, y), t_{hi}(X, y)$, etc. For $m$ sub-circuits each of size $O(d)$, totally there are $O(dm)$ elements of $\mathbb{Z}_p$ to process. The costs with IPA are $O(log_2(d) + log_2(m))$ for proof data, $O(dm)$ size MSM for verification runtime, which is much more expensive than direct computation.
+
+##### Review and Alternatives
+
+If we set $N$ to $2^{16}$, then $m$ might range from a few donzens to a few thousands for reasonable circuits. Under this assumption, Tea/Horse proving system has shorter proof yet longer runtime than [Hyrax](https://eprint.iacr.org/2017/1132.pdf), which typically features $O(\sqrt{n})$ proof size and verifier complexity.
+
+At this point our major issues are (1) with the verification key size, which is $O(N)$ with a big constant factor under our conjecture; and (2), the size of the recursive verifier, which could be very large, given it has to compute a large MSM and many field operations proportional to verification key size.
+
+The application circuits have to be in a scheme with succinct verifier, for example Tea/Horse or Hyrax. But even with Hyrax the recursive verifier is still very large.
+
+#### Sparse Polynomial Commitment
+
+Now let's take a step back and review if we can apply sparse polynomial commitment technique, called Spark, which was introduced in [Spartan](https://eprint.iacr.org/2019/550.pdf) and refined in [Lasso](https://people.cs.georgetown.edu/jthaler/Lasso-paper.pdf).
+
+Specifically, we seek to remove the circuit constants from the verifier key, replace them with some commitments. Then we don't need a recursive verifier, the proposed OP_ZKP implementation could verify proof data of application circuits directly. This addresses the two issues mentioned above.
+
+_Remark_ This is a live document. We might change our mind or switch to a better solution in the middle of developing the system.
