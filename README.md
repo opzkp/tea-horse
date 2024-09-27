@@ -4,7 +4,7 @@ by Weiji Guo from Lightec Labs
 
 *Note: by the time of writing, this document has NOT been reviewed. It may contain mistakes of various kinds. Also most claims are NOT backed by benchmarks. This is so far a live document rather than a paper draft intended to be published. We will address reviewing and benchmarking as we move on.*
 
-*Note: there are some issues rendering latex in GitHub/Browser. You may download the document to preview in VS Code. We will also provide a pdf version later.*
+*Note: there are some issues rendering latex in GitHub/Browser (Safari better than Chrome). You may also download the document to preview in VS Code.*
 
 We are developing the Tea/Horse proving system as the underlying scheme for the proposed OP_ZKP soft-fork upgrade to Bitcoin.
 
@@ -375,10 +375,15 @@ At this point our major issues are (1) with the verification key size, which is 
 
 The application circuits have to be in a scheme with succinct verifier, for example Tea/Horse or Hyrax. But even with Hyrax the recursive verifier is still very large.
 
-#### Sparse Polynomial Commitment
+###### Sparse Polynomial Commitment
 
-Now let's take a step back and review if we can apply sparse polynomial commitment technique, called Spark, which was introduced in [Spartan](https://eprint.iacr.org/2019/550.pdf) and refined in [Lasso](https://people.cs.georgetown.edu/jthaler/Lasso-paper.pdf).
+Now let's take a step back and review if we can apply sparse polynomial commitment technique, called `Spark`, which was introduced in [Spartan](https://eprint.iacr.org/2019/550.pdf) and refined in [Lasso](https://people.cs.georgetown.edu/jthaler/Lasso-paper.pdf).
 
 Specifically, we seek to remove the circuit constants from the verifier key, replace them with some commitments. Then we don't need a recursive verifier, the proposed OP_ZKP implementation could verify proof data of application circuits directly. This addresses the two issues mentioned above.
 
 *Remark* This is a live document. We might change our mind or switch to a better solution in the middle of developing the system.
+
+Based on the Figure 6 of the [Spartan paper](https://eprint.iacr.org/2019/550.pdf), we could commit to the constants of each sub-circuit. The circuit constants are of size $O(N)$, then with Hyrax polynomial commitment, `Spark` achieves $O(log^2(N))$ proof size and $O(\sqrt{N})$ verifier time.
+
+Since we are already dealing with $O(N)$ verifier time, $O(\sqrt{N})$ is totally acceptable even with a large constant. It is the proof size that concerns us. $O(log^2(N))$ is too big. 
+
