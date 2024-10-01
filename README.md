@@ -387,3 +387,28 @@ Based on the Figure 6 of the [Spartan paper](https://eprint.iacr.org/2019/550.pd
 
 Since we are already dealing with $O(N)$ verifier time, $O(\sqrt{N})$ is totally acceptable even with a large constant. It is the proof size that concerns us. $O(log^2(N))$ is too big. 
 
+#### zkStark as the scheme for Application Circuits
+
+We now get back to the recursive verifier design. This time we consider any scheme that has transparent setup, and has no pairing requirement, yet with minimal verifier time so that the recursive verifier could be small. It appears zkStark fits our requirement with its $O(log^2(N))$ verifier time. Also its verifier is dominated by hashing instead of EC scalar-multiplication. This could also help reduce the size of the recursive verifier especially if we adopt some ZK-friendly hash algorithm.
+
+A rough estimation to the verifier cost is based on the assumption that: (1) there exists a hash function that costs only 100-th of `SHA256` in terms of R1CS constraints; (2) hashing computation takes up at least 80% of the verifier computation. Further, let's use blowup factor of 32, and security level of $\lambda = 128$, and the upper bound of sub-circuit size is $N = 2^{16}$.
+
+For an application circuit with $2^{20}$ constraints, there should be $O(ceil(\lambda / log_2(32)) * log_2^2(2^{20})) = 26 \times 400 = 10400$ hash values in the proof. Then to verify the proof in the Tea/Horse system, roughly same amount of hashing operations must be performed in R1CS. 
+
+According to the Table 1 of [Reinforced Concrete](https://eprint.iacr.org/2021/1038.pdf), `Rescue-Prime` has less than $2^8$ constraints to hash 64 bytes of data, which happen to be the input in a Merkle Proof verification. With $N = 2^{16}$ we may pack 256 innovations of `Rescue-Prime` into one sub-circuit. So we need $m' = ceil(10400/256) = 41$ sub-circuits for the hash evaluations for the recursive verifier. In total we need $m = ceil(m'/80\%) = 52$ sub-circuits.
+
+According to costs analysis, the total proof size to be verified by `OP_ZKP` should be $(3m + 2log_2(N) + 4)[G] + 8[F] = 188[G] + 8[F]$. Since elements of $\mathbb{G}$ and $\mathbb{F}$ are of size 32 bytes, therefore the total proof size is 6272 bytes. Note that this is much better than Hyrax's square root proof size, which has at least thousands of group elements in the proof; at the cost of longer runtime of course, which we analyze below.
+
+Verifier runtime includes three parts:
+
+- 3 MSM each with size $m = 52$
+- MSM with size $d= 4N = 2^{18}$
+- computing $s(X, Y)$ and $k(Y)$
+
+The first one is relatively easy to compute. The seond one might cost single thread of a modern computer around 1 second, and of Raspeberry Pi 4 around 10 seconds.
+
+For the last one, note that $m' = 41$ sub-circuits have exactly the same structure (circuit constants), so we could estimate $s(X, Y)$ to have size around $3 \times 12 \times N = 36N$, or about 2.4 million, field operations, not discounting for potential duplicated entries. Since the field operations are dominated by mulltiplication, we use related benchmarking data to estimate the runtime. Based on the Table 2 of [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf), each multiplication costs 0.08us for a laptop computer. Then 2.4 million multiplication should cost about 0.2 second.
+
+Overall, verifier cost is dominated by a large MSM, and the total time looks acceptable, even for a small miner (RP4). Still, there is room for fine tuning and optimization. For example, we could have smaller $N$ and larger $m$ at the cost of bigger proof. Cutting $N$ in half leads to half the verifier time yet twice larger the proof. We leave further discussion to later sections.
+
+The conclusion is that, we can go ahead with aggrepated IPA proving for the recursive verifier + zkStark for the application circuits.
