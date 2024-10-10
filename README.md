@@ -248,6 +248,7 @@ $$(t_ 1 = t_ {lo}(z, y), proof_ {t_ {lo}}) \leftarrow \text{Open}_ \text{IPA}(T_
 $$(t_ 2 = t_ {hi}(z, y), proof_ {t_ {hi}}) \leftarrow \text{Open}_ \text{IPA}(T_ {hi}, z, t_ {hi}(X, y), \delta_ {T_ {hi}})$$
 
 Verifier need to verify all the above openings, compute $s = s(z, y)$, $s'$ from $s$, $k = k(y)$, then check if
+
 $$t_ 1 + t_ 2 \overset{?}{=} e(f + s') - k \quad \quad \quad (9)$$
 
 Passing Identity Test 9 means that $t_ 0(y) = 0$ with overwhelming probability. If all checks pass, Verifier returns 1, otherwise 0.
@@ -422,6 +423,7 @@ Suppose there are $M$ such transactions, each denoted as $T _I$ for $I \in [M]$.
 First the miner need to derive $y _I, z _I, \alpha _I, \beta _I$, retrieve and combine $R^{(i)}, T _{lo}^{(i)}, T _{hi}^{(i)}, i \in [m_I]$ into $R _I, T _{{lo} _I}, T _{{hi} _I}$, retrieve $e _I, f _I, t _{1 _I}, t _{2 _I}, \delta _{R _I}, \delta _{T _{lo _I}}, \delta _{T _{hi _I}}$ for $Proof _I$ of each $T _I$. These values should satisfy Formula (10) as attested by $Proof _I$.
 
 To verify $M$ proofs: $Proof _I$ for $I \in [M]$ together, it suffices to randomly combine all the proofs along with the above values. To facilitate pre-computation and computation reuse, the random value should be derived for each $Proof _I$ individually, i.e., 
+
 $$\gamma _I = \text{hash}(Proof _I)$$
 
 Since all the proofs are created under the same public parameters, they are expected to have the same length $d$. Then we can combine them into one pseudo-proof:
@@ -430,7 +432,7 @@ $$Proof = \sum _{I=1}^{M}\gamma _I \cdot Proof _I$$
 
 The resulting value $Proof$ should attest to the combined left hand side of (10):
 
-$$LHS = \sum _{I=1}^M \gamma _I \cdot (R _I + [\beta _I]T_ {{lo} _I} + [{\beta _I}^2]T_ {{hi} _I} + [e _I + \beta _I \cdot t_ {1 _I} + {\beta _I}^2 \cdot t_ {2 _I}]U_ 1 + [f _I]U_ 2)$$
+$$LHS = \sum _ {I=1}^M \gamma _ I \cdot (R _ I + [\beta _ I]T _ {{lo} _ I} + [{\beta _ I}^2]T _ {{hi} _ I} + [e _ I + \beta _ I \cdot t _ {1 _ I} + {\beta _ I}^2 \cdot t _ {2 _ I}]U _ 1 + [f_ I]U _ 2)$$
 
 When we do so, each $\mathbb{G}$ element of $Proof _I$ is scalar-multiplied by $\gamma _I$, then added to elements in the same position.
 
@@ -438,7 +440,7 @@ Note that $Proof$ is still of size $d = 4N$. So basically we reduce $M$ large MS
 
 After the proof verification, the miner has yet to compute $s, s', k$, then test if (9) holds. As $s _I, s' _I, k _I$ are all dependent on value of $y _I, z _I$, it has to be computed one by one before aggregation:
 
-$$s _I = \sum_ {i=1}^N(u_ i(y _I){z _I}^{-i} + v_ i(y _I){z _I}^i + w_ i(y _I){z _I}^{i+N})$$
+$$s _ I = \sum_ {i=1}^N(u_ i(y _ I){z _ I}^{-i} + v_ i(y _ I){z _ I}^i + w_ i(y _I){z _I}^{i+N})$$
 
 $$s' _I = {y _I}^N \cdot s _I - \sum _{i=1}^N({y _I}^i + {y _I}^{-i}){z _I}^{i+N}$$
 
