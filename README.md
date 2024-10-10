@@ -322,7 +322,7 @@ For $m$ sub-ircuits each with $N$ multiplication constraints, the proof data inc
 - commitments to $r^{(i)}(X, 1), t_ {lo}^{(i)}(X, y), t_ {hi}^{(i)}(X, y)$, totally $3m$ elements of $\mathbb{G}$, denoted $3m[G]$;
 - aggregated opening hints $\delta_ R, \delta_ {T_ {lo}}, \delta_ {T_ {hi}}$, totally 3 elements of $\mathbb{Z}_ p$, denoted $3[F]$;
 - aggregated open-to values $e, f, t_ 1, t_ 2$, totally 4 elements of $\mathbb{Z}_ p$, denoted $4[F]$;
-- proof data for opening the aggregated commitment, which is $2log_ 2(d)[G] + 1[F] = (2log_ 2(N) + 4)[G] + 1[F] $ (remember $d = 4N$). 
+- proof data for opening the aggregated commitment, which is $2log _ 2(d)[G] + 1[F] = (2log _ 2(N) + 4)[G] + 1[F]$ (remember $d = 4N$). 
 
 And the verification key include:
 
