@@ -14,7 +14,7 @@ The Tea/Horse proving system consists of three major parts:
 
 - Inner-Product Argument (IPA), thus the (EC)DLP hardness assumption only, and the secp256k1 curve only.
 - Aggregated Proving to effectively reduce the symptotical Verifier complexity to sub-linear.
-- Single circuit for a recursive verifier, to address the linear verification key issue.
+- Single circuit for a recursive verifier, to address the linear verification key issue. The recursive verifier verifies zkStark proofs. 
 
 The name Tea/Horse comes from an ancient confidential transaction style, in which people traded tea for horse or vice versa, (perhaps sometimes) keeping the price/bidding information within sleeves, exchanged during hand-shaking. Below picture was taken in Songpan where the author attended a trail running event early July. He came up with the idea of aggregated proving on his flight going there.
 
@@ -290,7 +290,7 @@ Finally we can define polynomials $r^{(i)}(X, Y)$, $s^{(i)}(X, Y)$ and $t^{(i)}(
 
 $$\delta_ R^{(i)} \overset{\$}{\leftarrow} \mathbb{Z}_ p,\quad R^{(i)} \leftarrow \text{Commit}(r^{(i)}(X, 1)X^{3N-1}; \delta_ R^{(i)}) $$
 
-and Verifier responds with a challenge value $y \in \mathbb{Z}_ p$. Note that all sub-circuit shares the same $y$ value.
+and Verifier responds with a challenge value $y \in \mathbb{Z}_ p$. Note that all sub-circuits share the same $y$ value.
 
 Next, Prover may commit to each of $t_ {lo}^{(i)}(X, y)$ and $t_ {hi}^{(i)}(X, y)$:
 
@@ -298,7 +298,7 @@ $$\delta_ {T_ {lo}^{(i)}} \overset{\$}{\leftarrow} \mathbb{Z}_ p,\quad T_ {lo}^{
 
 $$\delta_ {T_ {hi}^{(i)}} \overset{\$}{\leftarrow} \mathbb{Z}_ p,\quad T_ {hi}^{(i)} \leftarrow \text{Commit}(t_ {hi}^{(i)}(X, y); \delta_ {T_ {hi}^{(i)}}) $$
 
-Verifier responds with a challenge value $z \in \mathbb{Z}_ p$, which holds the same for all sub-circuits. And further two more challenge value $\alpha, \beta \in \mathbb{Z}_ p$. We use $\alpha$ to combine polynomials, commitment values, blinders and open-to values together:
+Verifier responds with another challenge value $z \in \mathbb{Z}_ p$, which also holds the same for all sub-circuits. And further two more challenge value $\alpha, \beta \in \mathbb{Z}_ p$. We use $\alpha$ to combine polynomials, commitment values, blinders and open-to values together:
 
 $$r(X, 1) = \sum_ {i=1}^m \alpha^i \cdot r^{(i)}(X, 1) \quad \quad s(X, y)= \sum_ {i=1}^m \alpha^i \cdot s^{(i)}(X, y) $$
 
@@ -312,7 +312,7 @@ $$e = \sum_ {i=1}^m\alpha^i\cdot e^{(i)}\quad f = \sum_ {i=1}^m\alpha^i\cdot f^{
 
 Then we use $\beta$ to batch open the combined polynomials, applying the Equation 10 with the definitions given above.
 
-After checking that Equation 10 holds, Verifier compute $s'$ and $k$, and check if the Identity Test 9 passes.
+After checking that Equation 10 holds, Verifier compute $s, s'$ and $k$, and check if the Identity Test 9 passes.
 
 #### Costs Analysis
 
@@ -407,8 +407,53 @@ Verifier runtime includes three parts:
 
 The first one is relatively easy to compute. The seond one might cost single thread of a modern computer around 1 second, and of Raspeberry Pi 4 around 10 seconds.
 
-For the last one, note that $m' = 41$ sub-circuits have exactly the same structure (circuit constants), so we could estimate $s(X, Y)$ to have size around $3 \times 12 \times N = 36N$, or about 2.4 million, field operations, not discounting for potential duplicated entries. Since the field operations are dominated by mulltiplication, we use related benchmarking data to estimate the runtime. Based on the Table 2 of [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf), each multiplication costs 0.08us for a laptop computer. Then 2.4 million multiplication should cost about 0.2 second.
+For the last one, note that $m' = 41$ sub-circuits have exactly the same structure (circuit constants), so we could estimate $s(X, Y)$ to have size around $3 \times 12 \times N = 36N$, or about 2.4 million, field operations, not discounting for potential duplicated entries. Since the field operations are dominated by mulltiplication, we use related benchmarking data to estimate the runtime. Based on the Table 2 of [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf), each multiplication costs 0.049us for a laptop computer with the `secp256k1` library. Then 2.4 million multiplication should cost about 0.12 second. (Acutal cost might be a bit higher as we oversimplify here, $s(X, Y)$ is combined from $m$ many sub-circuits and the combination factor is dependent on the witness.)
 
 Overall, verifier cost is dominated by a large MSM, and the total time looks acceptable, even for a small miner (RP4). Still, there is room for fine tuning and optimization. For example, we could have smaller $N$ and larger $m$ at the cost of bigger proof. Cutting $N$ in half leads to half the verifier time yet twice larger the proof. We leave further discussion to later sections.
 
 The conclusion is that, we can go ahead with aggrepated IPA proving for the recursive verifier + zkStark for the application circuits.
+
+#### Batched Verification
+
+We now move to a new topic regarding how a miner could batch verify multiple `OP_ZKP` transactions.
+
+Suppose there are $M$ such transactions, each denoted as $T _I$ for $I \in [M]$. For $T _I$, its proof has $m_I$ sub-circuits.
+
+First the miner need to derive $y _I, z _I, \alpha _I, \beta _I$, retrieve and combine $R^{(i)}, T _{lo}^{(i)}, T _{hi}^{(i)}, i \in [m_I]$ into $R _I, T _{{lo} _I}, T _{{hi} _I}$, retrieve $e _I, f _I, t _{1 _I}, t _{2 _I}, \delta _{R _I}, \delta _{T _{lo _I}}, \delta _{T _{hi _I}}$ for $Proof _I$ of each $T _I$. These values should satisfy Formula (10) as attested by $Proof _I$.
+
+To verify $M$ proofs: $Proof _I$ for $I \in [M]$ together, it suffices to randomly combine all the proofs along with the above values. To facilitate pre-computation and computation reuse, the random value should be derived for each $Proof _I$ individually, i.e., 
+$$\gamma _I = \text{hash}(Proof _I)$$
+
+Since all the proofs are created under the same public parameters, they are expected to have the same length $d$. Then we can combine them into one pseudo-proof:
+
+$$Proof = \sum _{I=1}^{M}\gamma _I \cdot Proof _I$$
+
+The resulting value $Proof$ should attest to the combined left hand side of (10):
+
+$$LHS = \sum _{I=1}^M \gamma _I \cdot (R _I + [\beta _I]T_ {{lo} _I} + [{\beta _I}^2]T_ {{hi} _I} + [e _I + \beta _I \cdot t_ {1 _I} + {\beta _I}^2 \cdot t_ {2 _I}]U_ 1 + [f _I]U_ 2)$$
+
+When we do so, each $\mathbb{G}$ element of $Proof _I$ is scalar-multiplied by $\gamma _I$, then added to elements in the same position.
+
+Note that $Proof$ is still of size $d = 4N$. So basically we reduce $M$ large MSM computation to only one, with the cost of mainly some combination operation, which themselves are scalar-multiplications. We leave the cost analysis to the next sub-section.
+
+After the proof verification, the miner has yet to compute $s, s', k$, then test if (9) holds. As $s _I, s' _I, k _I$ are all dependent on value of $y _I, z _I$, it has to be computed one by one before aggregation:
+
+$$s _I = \sum_ {i=1}^N(u_ i(y _I){z _I}^{-i} + v_ i(y _I){z _I}^i + w_ i(y _I){z _I}^{i+N})$$
+
+$$s' _I = {y _I}^N \cdot s _I - \sum _{i=1}^N({y _I}^i + {y _I}^{-i}){z _I}^{i+N}$$
+
+$$s' = \sum _{I=1}^M \gamma _I \cdot s' _I \quad \quad k = \sum _{I=1}^M \gamma _I \cdot k(y _I)$$
+
+##### Cost Analysis and Optimization
+
+Assuming each `OP_ZKP` transaction to be of size less than 7KB, counting in non-proof data such as UTXOs and payment amounts etc. If a bitcoin block consists of `OP_ZKP` transaction only, the maximal value of $M$ is 585.
+
+Combining the proofs together involves $O(2\text{log} _2(d))$, or a few dozens of MSM operations, each with size of $M$. The combined total is still trivial compared to the large MSM of size $d = 2^{18}$.
+
+Each $s _I$ computation costs 0.12s according to earlier estimation, then we shall spend a total of $0.12s \times M = 70s$ to compute $s$ if no optimization is involved. Computing $s'$ from $s$, or $k$ is much faster therefore ignored here. 
+
+This huge computation burden seems inherent to IPA and hard to optimize or remove. Even if it was feasible to optimize, the proof size of `OP_ZKP` transactions will still hinder its adoption. To address both issues together, we consider a new dedicated circuit to further verifies proofs of multiple `OP_ZKP` transactioins together.
+
+### The Blocker Prover
+
+Suppose there exists a threshold $t$ such that it is cheaper in terms of block space and verification time to verify $M$ `OP_ZKP` transactions in a dedicated circuit, whose proof will be verified by each node instead. Unlike earlier optimization attempts, this time we may consider those ZKP scheme without batched verification features.
