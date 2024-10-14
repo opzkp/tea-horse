@@ -471,3 +471,5 @@ Suppose there is the said threshold $T$. Each bitcoin block will be limited to h
 Surpassing the threshold, the block prover may kickin to replace the proof data of those $t$ `OP_ZKP` transactions with another proof, which has a size of a few hundred KBs, and the verification time should be very short, probably well within  1 second as most of the computation is to compute hash values.
 
 This documents has been packed with lots of speculated numbers. So we go no further estimating the constraint count, or incentives designed for the block prover. 
+
+We stress that with the block prover to batch verify the proof of all the `OP_ZKP` transactions, we can save lots of block space doing so. But again, let's skip any concrete numbers for now.
