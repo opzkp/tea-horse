@@ -456,6 +456,18 @@ Each $s _I$ computation costs 0.12s according to earlier estimation, then we sha
 
 This huge computation burden seems inherent to IPA and hard to optimize or remove. Even if it was feasible to optimize, the proof size of `OP_ZKP` transactions will still hinder its adoption. To address both issues together, we consider a new dedicated circuit to further verifies proofs of multiple `OP_ZKP` transactioins together.
 
-### The Blocker Prover
+#### Application Attestation
 
-Suppose there exists a threshold $t$ such that it is cheaper in terms of block space and verification time to verify $M$ `OP_ZKP` transactions in a dedicated circuit, whose proof will be verified by each node instead. Unlike earlier optimization attempts, this time we may consider those ZKP scheme without batched verification features.
+With a recursive verifier in play, each Bitcoin script containing the `OP_ZKP` opcode must have the capability to tell if the verified proof is dedicated to it. This is called attestation. The recursive verifier will also attach to its proof a piece of information as the attestation so that the script or the `OP_ZKP` implementation could verify.
+
+### The Block Prover
+
+Suppose there exists a threshold $T$ such that it is cheaper in terms of block space (and verification time) to verify $t \ge T$ `OP_ZKP` transactions in a dedicated circuit, whose proof will be verified by each node instead. Unlike earlier optimization attempts, this time we may consider those ZKP schemes without batched verification features.
+
+With new choices open to us, we might consider zkStark as it provides $O(log _2 ^2(N))$ proof size and verification time, and aggregated proving as well.
+
+Suppose there is the said threshold $T$. Each bitcoin block will be limited to have at most $T$ `OP_ZKP` transactions. Then a regular computer should be able to verify such a block about $0.12s*T + 1$ seconds, without involing multi-threading. In a setting with $T = 50$, the cost is 7 seconds. It is translated to more than 1 minute for a Raspberry Pi 4 miner. But we can adopt multi-threading in such a case to effectively reduce the time requirement. Meanwhile, the total block space occupied by the proof data of these $T$ transaction roughly equal to the replacement proof (subject to a few security parameters and circuit size of the recursive verifier).
+
+Surpassing the threshold, the block prover may kickin to replace the proof data of those $t$ `OP_ZKP` transactions with another proof, which has a size of a few hundred KBs, and the verification time should be very short, probably well within  1 second as most of the computation is to compute hash values.
+
+This documents has been packed with lots of speculated numbers. So we go no further estimating the constraint count, or incentives designed for the block prover. 
