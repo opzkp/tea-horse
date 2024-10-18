@@ -430,11 +430,11 @@ Since all the proofs are created under the same public parameters, they are expe
 
 $$Proof = \sum _{I=1}^{M}\gamma _I \cdot Proof _I$$
 
+When we do so, each $\mathbb{G}$ element of $Proof _I$ is scalar-multiplied by $\gamma _I$, then added to elements in the same position.
+
 The resulting value $Proof$ should attest to the combined left hand side of (10):
 
 $$LHS = \sum _ {I=1}^M \gamma _ I \cdot (R _ I + [\beta _ I]T _ {{lo} _ I} + [{\beta _ I}^2]T _ {{hi} _ I} + [e _ I + \beta _ I \cdot t _ {1 _ I} + {\beta _ I}^2 \cdot t _ {2 _ I}]U _ 1 + [f_ I]U _ 2)$$
-
-When we do so, each $\mathbb{G}$ element of $Proof _I$ is scalar-multiplied by $\gamma _I$, then added to elements in the same position.
 
 Note that $Proof$ is still of size $d = 4N$. So basically we reduce $M$ large MSM computation to only one, with the cost of mainly some combination operation, which themselves are scalar-multiplications. We leave the cost analysis to the next sub-section.
 
